@@ -2,49 +2,78 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
+import { Button, Card, Input } from '../components/index.jsx';
 
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
     try {
       const res = await api.post('/auth/login', form);
       login(res.data);
       navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.error || 'Login failed');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div style={styles.container}>
-      <div style={styles.card}>
-        <h1 style={styles.logo}>💸 SplitMint</h1>
-        <h2 style={styles.title}>Login</h2>
-        {error && <p style={styles.error}>{error}</p>}
-        <input style={styles.input} placeholder="Email"
-          value={form.email} onChange={e => setForm({...form, email: e.target.value})} />
-        <input style={styles.input} type="password" placeholder="Password"
-          value={form.password} onChange={e => setForm({...form, password: e.target.value})} />
-        <button style={styles.btn} onClick={handleSubmit}>Login</button>
-        <p style={styles.link}>No account? <Link to="/signup" style={styles.linkText}>Sign up</Link></p>
-      </div>
+    <div className="min-h-screen bg-dark flex items-center justify-center p-4">
+      <Card className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-primary-400 mb-2">💸 SplitMint</h1>
+          <p className="text-gray-400">Split expenses with friends</p>
+        </div>
+
+        {error && (
+          <div className="bg-red-900 border border-red-700 rounded-lg p-3 mb-4">
+            <p className="text-red-100 text-sm">{error}</p>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit}>
+          <Input
+            label="Email"
+            type="email"
+            placeholder="you@example.com"
+            value={form.email}
+            onChange={e => setForm({ ...form, email: e.target.value })}
+            disabled={loading}
+          />
+
+          <Input
+            label="Password"
+            type="password"
+            placeholder="••••••••"
+            value={form.password}
+            onChange={e => setForm({ ...form, password: e.target.value })}
+            disabled={loading}
+          />
+
+          <Button
+            type="submit"
+            disabled={loading}
+            className="w-full mb-4"
+          >
+            {loading ? 'Logging in...' : 'Login'}
+          </Button>
+        </form>
+
+        <p className="text-center text-gray-400">
+          No account?{' '}
+          <Link to='/signup' className="text-primary-400 hover:text-primary-300 font-medium">
+            Sign up
+          </Link>
+        </p>
+      </Card>
     </div>
   );
 }
-
-const styles = {
-  container: { minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0f0f0f' },
-  card: { background: '#1a1a1a', padding: '40px', borderRadius: '12px', width: '360px', display: 'flex', flexDirection: 'column', gap: '12px' },
-  logo: { color: '#4ade80', textAlign: 'center', margin: 0 },
-  title: { color: '#fff', textAlign: 'center', margin: 0 },
-  input: { padding: '12px', borderRadius: '8px', border: '1px solid #333', background: '#222', color: '#fff', fontSize: '14px' },
-  btn: { padding: '12px', borderRadius: '8px', background: '#4ade80', color: '#000', fontWeight: 'bold', border: 'none', cursor: 'pointer', fontSize: '16px' },
-  error: { color: '#f87171', textAlign: 'center', margin: 0 },
-  link: { color: '#aaa', textAlign: 'center', margin: 0, fontSize: '14px' },
-  linkText: { color: '#4ade80', textDecoration: 'none' },
-};

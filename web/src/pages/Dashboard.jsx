@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
+import { Button, Card, Modal, Input, TabButton, Badge, Chip } from '../components/index.jsx';
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
@@ -9,6 +10,11 @@ export default function Dashboard() {
   const [groups, setGroups] = useState([]);
   const [newGroup, setNewGroup] = useState('');
   const [error, setError] = useState('');
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showMembersModal, setShowMembersModal] = useState(false);
+  const [memberEmail, setMemberEmail] = useState('');
+  const [selectedGroupId, setSelectedGroupId] = useState(null);
+  const [groupMembers, setGroupMembers] = useState([]);
 
   useEffect(() => {
     if (!user) { navigate('/login'); return; }
@@ -25,73 +31,157 @@ export default function Dashboard() {
   const createGroup = async () => {
     if (!newGroup.trim()) return;
     try {
-      await api.post('/groups', { group_name: newGroup });
+      const res = await api.post('/groups', { group_name: newGroup });
+      setSelectedGroupId(res.data.group_id);
       setNewGroup('');
+      setShowCreateModal(false);
+      setShowMembersModal(true);
       fetchGroups();
     } catch { setError('Failed to create group'); }
   };
 
+  const addMemberToGroup = async () => {
+    if (!memberEmail.trim()) return;
+    try {
+      await api.post(`/groups/${selectedGroupId}/members`, { email: memberEmail });
+      setMemberEmail('');
+      fetchGroupMembers();
+    } catch { setError('Failed to add member'); }
+  };
+
+  const fetchGroupMembers = async () => {
+    try {
+      const res = await api.get(`/groups/${selectedGroupId}/members`);
+      setGroupMembers(res.data);
+    } catch { setError('Failed to load members'); }
+  };
+
   return (
-    <div style={styles.container}>
-      <div style={styles.header}>
-        <h1 style={styles.logo}>💸 SplitMint</h1>
-        <div style={styles.userInfo}>
-          <span style={styles.welcome}>Hey, {user?.name} 👋</span>
-          <button style={styles.logoutBtn} onClick={() => { logout(); navigate('/login'); }}>Logout</button>
+    <div className="min-h-screen bg-dark">
+      {/* Header */}
+      <header className="border-b border-border bg-card">
+        <div className="max-w-7xl mx-auto px-4 py-6 flex justify-between items-center">
+          <h1 className="text-3xl font-bold text-primary-400">💸 SplitMint</h1>
+          <div className="flex items-center gap-4">
+            <span className="text-gray-300">Hi, {user?.name} 👋</span>
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => { logout(); navigate('/login'); }}
+            >
+              Logout
+            </Button>
+          </div>
         </div>
-      </div>
+      </header>
 
-      <div style={styles.content}>
-        <h2 style={styles.sectionTitle}>Your Groups</h2>
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 py-12">
+        {/* Create Group Section */}
+        <div className="mb-12">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-white">Your Groups</h2>
+            <Button onClick={() => setShowCreateModal(true)}>
+              + New Group
+            </Button>
+          </div>
 
-        <div style={styles.createGroup}>
-          <input style={styles.input} placeholder="Group name (e.g. Chandigarh Trip)"
-            value={newGroup} onChange={e => setNewGroup(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && createGroup()} />
-          <button style={styles.btn} onClick={createGroup}>+ Create</button>
-        </div>
-
-        {error && <p style={styles.error}>{error}</p>}
-
-        <div style={styles.groupList}>
-          {groups.length === 0 && (
-            <p style={styles.empty}>No groups yet. Create one above ☝️</p>
+          {error && (
+            <Card className="bg-red-900 border-red-700 mb-6">
+              <p className="text-red-100">{error}</p>
+            </Card>
           )}
-          {groups.map(g => (
-            <div key={g.group_id} style={styles.groupCard}
-              onClick={() => navigate(`/group/${g.group_id}`)}>
-              <span style={styles.groupIcon}>👥</span>
-              <div>
-                <p style={styles.groupName}>{g.group_name}</p>
-                <p style={styles.groupSub}>Tap to view expenses</p>
-              </div>
-              <span style={styles.arrow}>›</span>
+
+          {/* Groups Grid */}
+          {groups.length === 0 ? (
+            <Card className="text-center py-12">
+              <p className="text-gray-400 mb-4">No groups yet. Create one to get started!</p>
+              <Button onClick={() => setShowCreateModal(true)}>
+                Create Your First Group
+              </Button>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {groups.map(group => (
+                <Card
+                  key={group.group_id}
+                  className="cursor-pointer hover:border-primary-500 transition-colors"
+                  onClick={() => navigate(`/group/${group.group_id}`)}
+                >
+                  <h3 className="text-xl font-bold text-white mb-4">{group.group_name}</h3>
+                  <div className="space-y-2 text-sm text-gray-400 mb-4">
+                    <p>Created: {new Date(group.created_at).toLocaleDateString()}</p>
+                  </div>
+                  <Button variant="outline" className="w-full">
+                    View Details →
+                  </Button>
+                </Card>
+              ))}
             </div>
-          ))}
+          )}
         </div>
-      </div>
+      </main>
+
+      {/* Create Group Modal */}
+      <Modal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        title="Create New Group"
+      >
+        <Input
+          label="Group Name"
+          placeholder="e.g. Summer Vacation"
+          value={newGroup}
+          onChange={e => setNewGroup(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && createGroup()}
+        />
+        <div className="flex gap-3">
+          <Button variant="secondary" onClick={() => setShowCreateModal(false)} className="flex-1">
+            Cancel
+          </Button>
+          <Button onClick={createGroup} className="flex-1">
+            Create
+          </Button>
+        </div>
+      </Modal>
+
+      {/* Add Members Modal */}
+      <Modal
+        isOpen={showMembersModal}
+        onClose={() => { setShowMembersModal(false); setGroupMembers([]); }}
+        title="Add Members to Group"
+      >
+        <Input
+          label="Member Email"
+          type="email"
+          placeholder="friend@example.com"
+          value={memberEmail}
+          onChange={e => setMemberEmail(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && addMemberToGroup()}
+        />
+
+        {groupMembers.length > 0 && (
+          <div className="mb-4">
+            <h4 className="text-sm font-medium text-gray-300 mb-2">Added Members:</h4>
+            <div className="space-y-2">
+              {groupMembers.map(member => (
+                <div key={member.user_id} className="bg-gray-800 rounded px-3 py-2 text-sm text-gray-200">
+                  {member.name} ({member.email})
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="flex gap-3">
+          <Button variant="secondary" onClick={() => { setShowMembersModal(false); setGroupMembers([]); }} className="flex-1">
+            Done
+          </Button>
+          <Button onClick={addMemberToGroup} className="flex-1">
+            Add Member
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }
-
-const styles = {
-  container: { minHeight: '100vh', background: '#0f0f0f', color: '#fff' },
-  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 32px', borderBottom: '1px solid #222' },
-  logo: { color: '#4ade80', margin: 0 },
-  userInfo: { display: 'flex', alignItems: 'center', gap: '16px' },
-  welcome: { color: '#aaa', fontSize: '14px' },
-  logoutBtn: { padding: '8px 16px', borderRadius: '8px', background: '#222', color: '#fff', border: '1px solid #333', cursor: 'pointer' },
-  content: { maxWidth: '600px', margin: '0 auto', padding: '32px 16px' },
-  sectionTitle: { color: '#fff', marginBottom: '16px' },
-  createGroup: { display: 'flex', gap: '8px', marginBottom: '24px' },
-  input: { flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid #333', background: '#1a1a1a', color: '#fff', fontSize: '14px' },
-  btn: { padding: '12px 20px', borderRadius: '8px', background: '#4ade80', color: '#000', fontWeight: 'bold', border: 'none', cursor: 'pointer' },
-  error: { color: '#f87171' },
-  groupList: { display: 'flex', flexDirection: 'column', gap: '12px' },
-  empty: { color: '#555', textAlign: 'center', padding: '40px 0' },
-  groupCard: { display: 'flex', alignItems: 'center', gap: '16px', background: '#1a1a1a', padding: '16px 20px', borderRadius: '12px', cursor: 'pointer', border: '1px solid #222' },
-  groupIcon: { fontSize: '24px' },
-  groupName: { color: '#fff', margin: 0, fontWeight: 'bold' },
-  groupSub: { color: '#555', margin: 0, fontSize: '12px' },
-  arrow: { marginLeft: 'auto', color: '#555', fontSize: '24px' },
-};
