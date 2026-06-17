@@ -31,9 +31,6 @@ export default function Login() {
         <input style={styles.input} type="password" placeholder="Password"
           value={form.password} onChange={e => setForm({...form, password: e.target.value})} />
         <button style={styles.btn} onClick={handleSubmit}>Login</button>
-        <p style={styles.link}>
-          <Link to="/forgot-password" style={styles.linkText}>Forgot password?</Link>
-        </p>
         <p style={styles.link}>No account? <Link to="/signup" style={styles.linkText}>Sign up</Link></p>
       </div>
     </div>
