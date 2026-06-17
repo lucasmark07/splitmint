@@ -10,11 +10,11 @@ export default function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/"          element={<Navigate to="/login" />} />
-          <Route path="/login"     element={<Login />} />
-          <Route path="/signup"    element={<Signup />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/group/:id" element={<Group />} />
+          <Route path="/"                element={<Navigate to="/login" />} />
+          <Route path="/login"           element={<Login />} />
+          <Route path="/signup"          element={<Signup />} />
+          <Route path="/dashboard"       element={<Dashboard />} />
+          <Route path="/group/:id"       element={<Group />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

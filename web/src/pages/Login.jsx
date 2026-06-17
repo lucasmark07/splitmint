@@ -31,7 +31,10 @@ export default function Login() {
         <input style={styles.input} type="password" placeholder="Password"
           value={form.password} onChange={e => setForm({...form, password: e.target.value})} />
         <button style={styles.btn} onClick={handleSubmit}>Login</button>
-        <p style={styles.link}>No account? <Link to="/signup">Sign up</Link></p>
+        <p style={styles.link}>
+          <Link to="/forgot-password" style={styles.linkText}>Forgot password?</Link>
+        </p>
+        <p style={styles.link}>No account? <Link to="/signup" style={styles.linkText}>Sign up</Link></p>
       </div>
     </div>
   );
@@ -45,5 +48,6 @@ const styles = {
   input: { padding: '12px', borderRadius: '8px', border: '1px solid #333', background: '#222', color: '#fff', fontSize: '14px' },
   btn: { padding: '12px', borderRadius: '8px', background: '#4ade80', color: '#000', fontWeight: 'bold', border: 'none', cursor: 'pointer', fontSize: '16px' },
   error: { color: '#f87171', textAlign: 'center', margin: 0 },
-  link: { color: '#aaa', textAlign: 'center', margin: 0 },
+  link: { color: '#aaa', textAlign: 'center', margin: 0, fontSize: '14px' },
+  linkText: { color: '#4ade80', textDecoration: 'none' },
 };
