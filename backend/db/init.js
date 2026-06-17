@@ -12,6 +12,13 @@ db.exec(`
     upi_id    TEXT    DEFAULT ''
   );
 
+  CREATE TABLE IF NOT EXISTS password_resets (
+    token      TEXT PRIMARY KEY,
+    user_id    INTEGER NOT NULL,
+    expires_at DATETIME NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+  );
+
   CREATE TABLE IF NOT EXISTS groups_table (
     group_id   INTEGER PRIMARY KEY AUTOINCREMENT,
     group_name TEXT    NOT NULL,
