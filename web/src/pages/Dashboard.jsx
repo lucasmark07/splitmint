@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
-import { Button, Card, Modal, Input, TabButton, Badge, Chip } from '../components/index.jsx';
+import { Button, Card, Modal, Input } from '../components/index.jsx';
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
@@ -43,7 +43,7 @@ export default function Dashboard() {
   const addMemberToGroup = async () => {
     if (!memberEmail.trim()) return;
     try {
-      await api.post(`/groups/${selectedGroupId}/members`, { email: memberEmail });
+      await api.post('/groups/' + selectedGroupId + '/members', { email: memberEmail });
       setMemberEmail('');
       fetchGroupMembers();
     } catch { setError('Failed to add member'); }
@@ -51,19 +51,28 @@ export default function Dashboard() {
 
   const fetchGroupMembers = async () => {
     try {
-      const res = await api.get(`/groups/${selectedGroupId}/members`);
+      const res = await api.get('/groups/' + selectedGroupId + '/members');
       setGroupMembers(res.data);
     } catch { setError('Failed to load members'); }
   };
 
   return (
-    <div className="min-h-screen bg-dark">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       {/* Header */}
-      <header className="border-b border-border bg-card">
-        <div className="max-w-7xl mx-auto px-4 py-6 flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-primary-400">💸 SplitMint</h1>
-          <div className="flex items-center gap-4">
-            <span className="text-gray-300">Hi, {user?.name} 👋</span>
+      <header className="backdrop-blur-xl bg-white bg-opacity-5 border-b border-white border-opacity-10 sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-6 py-6 flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <span className="text-4xl">💸</span>
+            <div>
+              <h1 className="text-3xl font-black bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">SplitMint</h1>
+              <p className="text-xs text-gray-400 font-semibold">Split Expenses Smartly</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-6">
+            <div className="text-right">
+              <p className="text-white font-semibold">{user?.name}</p>
+              <p className="text-xs text-gray-400">{user?.email}</p>
+            </div>
             <Button
               variant="danger"
               size="sm"
@@ -76,57 +85,79 @@ export default function Dashboard() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 py-12">
-        {/* Create Group Section */}
-        <div className="mb-12">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-white">Your Groups</h2>
-            <Button onClick={() => setShowCreateModal(true)}>
-              + New Group
+      <main className="max-w-7xl mx-auto px-6 py-12">
+        {/* Welcome Section */}
+        <div className="mb-12 animate-fade-in-up">
+          <h2 className="text-5xl font-black mb-2">
+            <span className="text-white">Welcome back, </span>
+            <span className="bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">{user?.name?.split(' ')[0]}</span>
+            <span className="text-white">!</span>
+          </h2>
+          <p className="text-gray-400 text-lg">Manage your group expenses with ease</p>
+        </div>
+
+        {/* Create Group Button */}
+        <div className="mb-12 flex gap-4 items-center">
+          <Button size="lg" onClick={() => setShowCreateModal(true)}>
+            ✨ Create New Group
+          </Button>
+          <Button variant="secondary" size="lg" onClick={() => navigate('/group/1')}>
+            📊 View Statistics
+          </Button>
+        </div>
+
+        {error && (
+          <Card className="bg-red-500 bg-opacity-10 border-red-500 border-opacity-30 mb-6">
+            <p className="text-red-200">{error}</p>
+          </Card>
+        )}
+
+        {/* Groups Grid */}
+        {groups.length === 0 ? (
+          <Card className="text-center py-16">
+            <p className="text-gray-400 mb-6 text-lg">No groups yet. Create one to get started!</p>
+            <Button size="lg" onClick={() => setShowCreateModal(true)}>
+              Create Your First Group
             </Button>
-          </div>
-
-          {error && (
-            <Card className="bg-red-900 border-red-700 mb-6">
-              <p className="text-red-100">{error}</p>
-            </Card>
-          )}
-
-          {/* Groups Grid */}
-          {groups.length === 0 ? (
-            <Card className="text-center py-12">
-              <p className="text-gray-400 mb-4">No groups yet. Create one to get started!</p>
-              <Button onClick={() => setShowCreateModal(true)}>
-                Create Your First Group
-              </Button>
-            </Card>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {groups.map(group => (
-                <Card
-                  key={group.group_id}
-                  className="cursor-pointer hover:border-primary-500 transition-colors"
-                  onClick={() => navigate(`/group/${group.group_id}`)}
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {groups.map((group, idx) => (
+              <div key={group.group_id} style={{ animationDelay: `${idx * 100}ms` }} className="animate-fade-in-up cursor-pointer group">
+                <Card 
+                  className="h-full hover:shadow-2xl hover:shadow-emerald-500/20 hover:border-emerald-400 hover:border-opacity-30 transform hover:-translate-y-1 transition-all duration-300"
+                  onClick={() => navigate('/group/' + group.group_id)}
                 >
-                  <h3 className="text-xl font-bold text-white mb-4">{group.group_name}</h3>
-                  <div className="space-y-2 text-sm text-gray-400 mb-4">
-                    <p>Created: {new Date(group.created_at).toLocaleDateString()}</p>
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <div className="text-4xl mb-2">👥</div>
+                      <h3 className="text-2xl font-bold text-white group-hover:text-emerald-400 transition-colors">{group.group_name}</h3>
+                    </div>
+                  </div>
+                  <div className="space-y-2 mb-6">
+                    <p className="text-sm text-gray-400">
+                      Created on {new Date(group.created_at).toLocaleDateString('en-US', { 
+                        year: 'numeric', 
+                        month: 'short', 
+                        day: 'numeric' 
+                      })}
+                    </p>
                   </div>
                   <Button variant="outline" className="w-full">
                     View Details →
                   </Button>
                 </Card>
-              ))}
-            </div>
-          )}
-        </div>
+              </div>
+            ))}
+          </div>
+        )}
       </main>
 
       {/* Create Group Modal */}
       <Modal
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
-        title="Create New Group"
+        title="✨ Create New Group"
       >
         <Input
           label="Group Name"
@@ -140,7 +171,7 @@ export default function Dashboard() {
             Cancel
           </Button>
           <Button onClick={createGroup} className="flex-1">
-            Create
+            Create Group
           </Button>
         </div>
       </Modal>
@@ -149,7 +180,7 @@ export default function Dashboard() {
       <Modal
         isOpen={showMembersModal}
         onClose={() => { setShowMembersModal(false); setGroupMembers([]); }}
-        title="Add Members to Group"
+        title="👥 Add Members"
       >
         <Input
           label="Member Email"
@@ -162,11 +193,12 @@ export default function Dashboard() {
 
         {groupMembers.length > 0 && (
           <div className="mb-4">
-            <h4 className="text-sm font-medium text-gray-300 mb-2">Added Members:</h4>
+            <h4 className="text-sm font-semibold text-gray-300 mb-3">Added Members:</h4>
             <div className="space-y-2">
               {groupMembers.map(member => (
-                <div key={member.user_id} className="bg-gray-800 rounded px-3 py-2 text-sm text-gray-200">
-                  {member.name} ({member.email})
+                <div key={member.user_id} className="bg-white bg-opacity-5 rounded-lg px-4 py-3 text-sm text-gray-200 border border-white border-opacity-10">
+                  👤 {member.name} 
+                  <span className="text-gray-500 text-xs ml-2">({member.email})</span>
                 </div>
               ))}
             </div>
